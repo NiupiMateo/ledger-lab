@@ -12,8 +12,18 @@ terraform {
   }
 }
 
+locals {
+  # Con un ambiente existente no se crea uno propio, y los logs quedan a cargo de ese ambiente.
+  own_environment = var.existing_environment_id == null
+}
+
+moved {
+  from = azurerm_container_app_environment.this
+  to   = azurerm_container_app_environment.this[0]
+}
+
 resource "azurerm_log_analytics_workspace" "this" {
-  count = var.logs_enabled ? 1 : 0
+  count = var.logs_enabled && local.own_environment ? 1 : 0
 
   name                = "log-${var.name}"
   resource_group_name = var.resource_group_name
@@ -25,6 +35,8 @@ resource "azurerm_log_analytics_workspace" "this" {
 }
 
 resource "azurerm_container_app_environment" "this" {
+  count = local.own_environment ? 1 : 0
+
   name                       = "cae-${var.name}"
   resource_group_name        = var.resource_group_name
   location                   = var.location
@@ -63,7 +75,7 @@ resource "time_sleep" "rbac_propagation" {
 resource "azurerm_container_app" "this" {
   name                         = "ca-${var.name}"
   resource_group_name          = var.resource_group_name
-  container_app_environment_id = azurerm_container_app_environment.this.id
+  container_app_environment_id = one(concat(azurerm_container_app_environment.this[*].id, compact([var.existing_environment_id])))
   revision_mode                = "Single"
   workload_profile_name        = "Consumption"
   tags                         = var.tags

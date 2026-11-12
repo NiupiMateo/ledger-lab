@@ -49,16 +49,26 @@ variable "use_free_offer" {
   default = true
 }
 
+# Una suscripcion de prueba gratuita admite un solo ambiente de Container Apps en total
+# (MaxNumberOfGlobalEnvironmentsInSubExceeded, cuota no ampliable para esa oferta).
+# Por eso la app de prod se publica en el ambiente de dev. Base, Key Vault, identidad,
+# estado y grupo de recursos siguen siendo propios de prod.
+data "azurerm_container_app_environment" "shared" {
+  name                = "cae-ledger-dev"
+  resource_group_name = "rg-ledger-dev"
+}
+
 module "stack" {
   source = "../../modules/stack"
 
-  environment       = "prod"
-  location          = var.location
-  database_location = var.database_location
-  image             = var.image
-  use_free_offer    = var.use_free_offer
-  max_replicas      = 3
-  jwt_minutes       = 15
+  environment                  = "prod"
+  container_app_environment_id = data.azurerm_container_app_environment.shared.id
+  location                     = var.location
+  database_location            = var.database_location
+  image                        = var.image
+  use_free_offer               = var.use_free_offer
+  max_replicas                 = 3
+  jwt_minutes                  = 15
 }
 
 output "app_url" {

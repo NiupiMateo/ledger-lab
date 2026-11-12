@@ -148,3 +148,25 @@ run "el_tope_de_replicas_protege_el_credito" {
 
   expect_failures = [var.max_replicas]
 }
+
+run "prod_puede_usar_un_ambiente_existente" {
+  command = apply
+
+  variables {
+    environment                  = "prod"
+    container_app_environment_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-ledger-dev/providers/Microsoft.App/managedEnvironments/cae-ledger-dev"
+  }
+
+  assert {
+    condition     = module.app.creates_environment == false
+    error_message = "Con un ambiente existente no se debe crear otro."
+  }
+  assert {
+    condition     = endswith(module.app.environment_id, "/managedEnvironments/cae-ledger-dev")
+    error_message = "La app debe publicarse en el ambiente indicado."
+  }
+  assert {
+    condition     = azurerm_resource_group.this.name == "rg-ledger-prod"
+    error_message = "Los demas recursos siguen siendo propios de prod."
+  }
+}

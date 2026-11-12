@@ -78,16 +78,17 @@ module "key_vault" {
 module "app" {
   source = "../container_app"
 
-  name                  = local.name
-  resource_group_name   = azurerm_resource_group.this.name
-  location              = azurerm_resource_group.this.location
-  image                 = var.image
-  key_vault_id          = module.key_vault.id
-  secret_ids            = module.key_vault.secret_ids
-  max_replicas          = var.max_replicas
-  logs_enabled          = local.is_prod
-  rbac_propagation_wait = var.rbac_propagation_wait
-  tags                  = local.tags
+  name                    = local.name
+  resource_group_name     = azurerm_resource_group.this.name
+  location                = azurerm_resource_group.this.location
+  image                   = var.image
+  key_vault_id            = module.key_vault.id
+  secret_ids              = module.key_vault.secret_ids
+  max_replicas            = var.max_replicas
+  logs_enabled            = local.is_prod
+  existing_environment_id = var.container_app_environment_id
+  rbac_propagation_wait   = var.rbac_propagation_wait
+  tags                    = local.tags
 
   environment_variables = {
     APP_ENV     = var.environment
