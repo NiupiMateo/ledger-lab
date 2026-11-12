@@ -19,6 +19,7 @@ PRICES = {
     "log_gb_ingested": 2.3,
     "blob_gb_month": 0.02,
     "blob_10k_writes": 0.05,
+    "acr_basic_day": 0.1666,
 }
 
 
@@ -108,6 +109,27 @@ def test_unknown_resource_is_reported():
           "type": "azurerm_linux_virtual_machine", "values": {}}
     _, unknown = cost.estimate({"dev": plan(vm)}, usage(), book())
     assert unknown == ["dev: azurerm_linux_virtual_machine.x"]
+
+
+def registry(sku="Basic"):
+    return {"address": "azurerm_container_registry.this", "mode": "managed",
+            "type": "azurerm_container_registry", "values": {"sku": sku}}
+
+
+def test_basic_registry_has_fixed_monthly_cost():
+    # Por eso el laboratorio usa GHCR: el registro de Azure cobra aunque nadie descargue la imagen.
+    lines, unknown = cost.estimate({"dev": plan(registry())}, usage(), book())
+    assert unknown == []
+    assert total(lines) == pytest.approx(30 * 0.1666)
+
+
+def test_registry_without_price_rule_is_reported():
+    _, unknown = cost.estimate({"dev": plan(registry("Premium"))}, usage(), book())
+    assert unknown == ["dev: azurerm_container_registry.this"]
+
+
+def test_registry_alone_breaks_a_two_dollar_budget(tmp_path):
+    assert run_cli(tmp_path, [registry()], "--budget", "2") == 1
 
 
 def test_data_sources_and_helpers_are_ignored():

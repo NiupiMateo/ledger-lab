@@ -65,7 +65,15 @@ METERS = {
         "Hot LRS Write Operations",
         "10K",
     ),
+    "acr_basic_day": (
+        "serviceName eq 'Container Registry' and skuName eq 'Basic'",
+        "Basic Registry Unit",
+        "1/Day",
+    ),
 }
+
+# Azure Container Registry cobra un monto fijo por dia, haya o no descargas.
+DAYS_PER_MONTH = 30
 
 # Recursos sin cargo propio: su costo aparece, si lo hay, en los recursos que los usan.
 FREE_RESOURCES = {
@@ -188,6 +196,9 @@ def estimate_plan(name: str, plan: dict, usage: dict, book: PriceBook, grant: di
             billable = max(0.0, usage["log_gb_per_month"] - 5.0)
             cost = billable * book.price("log_gb_ingested", region)
             lines.append(Line(name, address, cost, f"{usage['log_gb_per_month']} GB (5 GB gratis)"))
+        elif kind == "azurerm_container_registry" and values.get("sku", "Basic") == "Basic":
+            cost = DAYS_PER_MONTH * book.price("acr_basic_day", region)
+            lines.append(Line(name, address, cost, f"Basic, {DAYS_PER_MONTH} dias de cargo fijo"))
         elif kind == "azurerm_storage_account":
             storage = usage["state_storage_gb"] * book.price("blob_gb_month", region)
             writes = usage["state_writes_per_month"] / 10_000 * book.price("blob_10k_writes", region)
