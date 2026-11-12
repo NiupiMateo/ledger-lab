@@ -57,6 +57,12 @@ variable "logs_enabled" {
   default     = false
 }
 
+variable "existing_environment_id" {
+  description = "Ambiente de Container Apps ya creado. Con null el modulo crea uno propio."
+  type        = string
+  default     = null
+}
+
 variable "rbac_propagation_wait" {
   description = "Espera tras asignar el rol de lectura."
   type        = string

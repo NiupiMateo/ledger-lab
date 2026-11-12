@@ -57,3 +57,9 @@ variable "rbac_propagation_wait" {
   type        = string
   default     = "90s"
 }
+
+variable "container_app_environment_id" {
+  description = "Ambiente de Container Apps existente que la app debe usar. Con null se crea uno propio."
+  type        = string
+  default     = null
+}
